@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#  Author: Joel Palmius, black-punkduck
+#  Author: black-punkduck, Elvaerwyn
 
 import bpy
 import json
@@ -75,7 +75,7 @@ def enumlist_meshes(self, context):
 
     if len(mh_readitem) ==  0:
         cnt = 0
-        blendpath = os.path.join(os.path.dirname(__file__), "humans")
+        blendpath = os.path.join(os.path.dirname(__file__), "bases")
         if os.path.isdir(blendpath):
             for filename in os.listdir(blendpath):
                 if filename.endswith(".blend"):

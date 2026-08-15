@@ -1,20 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#  Authors: Joel Palmius
-#           black-punkduck (Maintainer)
-
+#  Authors: black-punkduck (Maintainer)
+#            Elvaerwyn
 #
 # must be before(!) all imports
 #
 bl_info = {
     "name": "MakeApparel",
-    "author": "black-punkduck, Joel Palmius",
+    "author": "black-punkduck, Elvaerwyn",
     "version": (3,0,0),
     "blender": (4,0,0),
     "location": "View3D > Properties > MakeApparel",
     "description": "Create MakeHuman2 Fashion and Assets",
-    'wiki_url': "http://www.makehumancommunity.org/",
+    'wiki_url': "https://makehuman-2.github.io/",
     "category": "MakeHuman2"}
 
 from bpy.utils import register_class, unregister_class

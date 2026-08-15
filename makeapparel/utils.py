@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#  Author: Joel Palmius, black-punkduck
+#  Author: black-punkduck, Elvaerwyn
 
 import os
 import json
@@ -19,8 +19,6 @@ from bpy_extras.io_utils import axis_conversion
 if bpy.app.version < (4,0,0):
     from io_scene_obj import import_obj
 
-_TRACING = True
-
 def getMyDocuments():
     import sys
     if sys.platform == 'win32':
@@ -36,18 +34,24 @@ def getMyDocuments():
                 return name
         except Exception as e:
             print("Did not find path to My Documents folder")
-    if sys.platform.startswith('linux'):
-        try:
-            from .xdg_parser import XDG_PATHS
-            doc_folder = XDG_PATHS.get('DOCUMENTS', '')
-            if doc_folder and doc_folder != "":
-                return doc_folder
-        except:
-            print("Error when trying to get DOCUMENTS dir")
-    return os.path.expanduser("~")
+    elif sys.platform.startswith('linux'):
 
-#
-# use exact the same method as makehuman if a makehuman.conf file exists
+        # Default path to xdg configuration file
+        CONFIG_PATH = os.path.expanduser('~/.config/user-dirs.dirs')
+        doc_folder = None
+        if os.path.isfile(CONFIG_PATH):
+            with io.open(CONFIG_PATH , 'r') as file:
+                for line in file:
+                    if line and line.startswith('XDG_DOCUMENTS_DIR'):
+                        line = line.strip()
+                        key, value = line.split('=')
+                        value = os.path.expandvars(value.strip('"'))
+                        if os.path.isdir(value):
+                            doc_folder = value
+        if doc_folder is None:
+            doc_folder = os.path.expanduser("~")
+
+
 
 def pathFromConfigFile():
     configFile = ''
@@ -134,18 +138,3 @@ def loadObjFile(context, filename):
 
     return (None)
 
-def trace(message = None):
-    global _TRACING
-    if _TRACING:
-        info = dict()
-
-        stack = inspect.currentframe().f_back
-        info["line_number"] = str(stack.f_lineno)
-        info["caller_name"] = stack.f_globals["__name__"]
-        info["file_name"] = stack.f_globals["__file__"]
-        info["caller_method"] = inspect.stack()[1][3]
-
-        stack = inspect.stack()
-        info["caller_class"] = str(stack[1][0].f_locals["self"].__class__)
-
-        print("TRACE {}.{}():{}".format(info["caller_name"], info["caller_method"], info["line_number"]))

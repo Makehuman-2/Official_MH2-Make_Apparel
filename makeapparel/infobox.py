@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#  Author: Joel Palmius, black-punkduck
+#  Author: black-punkduck, Elvaerwyn
 
 import bpy
 
