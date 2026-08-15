@@ -6,7 +6,7 @@
 # layout:
 #
 # [preferences/common-settings]
-# [get & check human]
+# [get & check base]
 # [get & check clothes]
 # [create clothes]
 
@@ -59,33 +59,32 @@ class MHC_PT_MakeApparelPanel(bpy.types.Panel):
         layout.prop(scn, 'mcTabs', expand=True)
 
         if scn.mcTabs == 'A':
-            # get and check human
+            # get and check base
             #
-            humanBox = layout.box()
-            humanBox.label(text="Human/Basis", icon="MESH_DATA")
+            baseBox = layout.box()
+            baseBox.label(text="Base", icon="MESH_DATA")
             if hasattr(obj, "MhMeshType"):
-                row = humanBox.row()
-                row.label(text="Base")
+                row = baseBox.row()
+                row.label(text="Basename")
                 row.prop(obj, 'MhMeshType', text="")
                 meshtype = obj.MhMeshType
             else:
                 meshtype = None
 
-            if not base_available and (meshtype == "hm08" or meshtype is None):
+            if not base_available:
                 if scn.MH_predefinedMeshes != "---":
-                    humanBox.prop(scn, 'MH_predefinedMeshes')
-                    humanBox.operator("makeapparel.importpredef", text="Import predefined human")
-                humanBox.operator("makeapparel.importhuman", text="Import human (.obj)")
+                    baseBox.prop(scn, 'MH_predefinedMeshes')
+                    baseBox.operator("makeapparel.importpredef", text="Import predefined base")
+                baseBox.operator("makeapparel.importbase", text="Import base (.obj)")
 
-            basis = "human" if meshtype == "hm08" else "basis"
-            humanBox.operator("makeapparel.mark_as_human", text="Mark as " + basis)
-            humanBox.operator("makeapparel.check_human", text="Check " + basis)
+            baseBox.operator("makeapparel.mark_as_base", text="Mark as base")
+            baseBox.operator("makeapparel.check_base", text="Check base")
             if meshtype == "hm08":
-                humanBox.operator("makeapparel.delete_helper", text="Delete helpers")
+                baseBox.operator("makeapparel.delete_helper", text="Delete helpers")
             if  shape_keys:
-                humanBox.operator("makeapparel.apply_shapekeys", text="Apply targets")
+                baseBox.operator("makeapparel.apply_shapekeys", text="Apply targets")
 
-            # get and check clothes (same order as human)
+            # get and check clothes (same order as base)
             #
             setupBox = layout.box()
             setupBox.label(text="Clothes", icon="MESH_DATA")
@@ -109,7 +108,7 @@ class MHC_PT_MakeApparelPanel(bpy.types.Panel):
                 produceBox.label(text="- select a visible mesh object -")
             else:
                 if obj.MhObjectType == "Basemesh":
-                    produceBox.label(text="Selected mesh is marked as human")
+                    produceBox.label(text="Selected mesh is marked as base")
                 else:
                     produceBox.label(text="Name")
                     produceBox.prop(obj, 'MhClothesName', text="")
@@ -153,16 +152,17 @@ class MHC_PT_MakeApparelPanel(bpy.types.Panel):
             writeBox = layout.box()
             writeBox.label(text="Write material", icon="MATERIAL_DATA")
 
-            writeBox.prop(obj, 'MhMsName', text='Name')
-            writeBox.prop(obj, 'MhMsDescription', text='Description')
-            writeBox.prop(obj, 'MhMsTag', text='Tags')
-            writeBox.prop(obj, 'MhMsShader', text='Shader')
+            if obj is not None:
+                writeBox.prop(obj, 'MhMsName', text='Name')
+                writeBox.prop(obj, 'MhMsDescription', text='Description')
+                writeBox.prop(obj, 'MhMsTag', text='Tags')
+                writeBox.prop(obj, 'MhMsShader', text='Shader')
 
-            writeBox.prop(obj, 'MhMsBackfaceCull', text='Backface culling')
-            writeBox.prop(obj, 'MhMsAlphaToCoverage', text='AlphaToCoverage')
-            writeBox.prop(obj, 'MhMsTransparent', text='Transparent')
-            writeBox.prop(obj, 'MhMsTextures', text='Paths')
-            writeBox.prop(obj, 'MhMsUseLit', text='Use litsphere')
-            writeBox.prop(obj, 'MhMsLitsphere', text='Litsphere texture')
+                writeBox.prop(obj, 'MhMsBackfaceCull', text='Backface culling')
+                writeBox.prop(obj, 'MhMsAlphaToCoverage', text='AlphaToCoverage')
+                writeBox.prop(obj, 'MhMsTransparent', text='Transparent')
+                writeBox.prop(obj, 'MhMsTextures', text='Paths')
+                writeBox.prop(obj, 'MhMsUseLit', text='Use litsphere')
+                writeBox.prop(obj, 'MhMsLitsphere', text='Litsphere texture')
 
-            writeBox.operator("makeapparel.write_material", text="Save material")
+                writeBox.operator("makeapparel.write_material", text="Save material")

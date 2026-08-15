@@ -11,14 +11,14 @@ def EvaluateScalingCallback(self, context):
 
 
     if hasattr (context, "object"):
-        humanObj = None
+        baseObj = None
         for obj in context.scene.objects:
             if hasattr(obj, "MhObjectType"):
                 if obj.MhObjectType == "Basemesh":
-                    humanObj = obj
+                    baseObj = obj
                     break
-        if humanObj is not None:
-            (meshtype, jlines) = _loadMeshJson(humanObj)
+        if baseObj is not None:
+            (meshtype, jlines) = _loadMeshJson(baseObj)
             cnt = 1
             for gname in jlines["dimensions"]:
                 gl_name = gname.lower()

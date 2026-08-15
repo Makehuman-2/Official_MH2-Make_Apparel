@@ -23,11 +23,11 @@ class MHC_OT_ApplyShapeKeysOperator(bpy.types.Operator):
 
     def execute(self, context):
 
-        humanObj = context.active_object
+        baseObj = context.active_object
 
-        humanObj.shape_key_add(name=str(humanObj.active_shape_key.name)+"_applied", from_mix=True)
-        n = len (humanObj.data.shape_keys.key_blocks)
-        humanObj.active_shape_key_index = 0
+        baseObj.shape_key_add(name=str(baseObj.active_shape_key.name)+"_applied", from_mix=True)
+        n = len (baseObj.data.shape_keys.key_blocks)
+        baseObj.active_shape_key_index = 0
         for i in range(0, n):
             bpy.ops.object.shape_key_remove(all=False)
 

@@ -30,19 +30,19 @@ class import_mhclo:
         self.delete_group = "Delete"
         return
 
-    def update(self, human):
+    def update(self, base):
 
-        if human is None:
+        if base is None:
             return
 
-        hverts = human.data.vertices
+        hverts = base.data.vertices
         hl = len(hverts)        # number of base vertices
 
         # Figure out an appropriate fallback scale in case scale isn't set explicitly in mhclo
-        # Use 1.0 if not set as attribute on human, otherwise use the attribute from human
+        # Use 1.0 if not set as attribute on base, otherwise use the attribute from base
         fallback_scale = 1.0
-        if human and hasattr(human, "MhScaleFactor") and human.MhScaleFactor:
-            fallback_scale = human.MhScaleFactor
+        if base and hasattr(base, "MhScaleFactor") and base.MhScaleFactor:
+            fallback_scale = base.MhScaleFactor
 
         s0 = s1 = s2 = fallback_scale
 
@@ -82,7 +82,7 @@ class import_mhclo:
         # if delete_verts is existing, create a group on the body
         #
         if self.delete:
-            ogroups = human.vertex_groups
+            ogroups = base.vertex_groups
 
             # delete old group if already there
             #
@@ -91,7 +91,7 @@ class import_mhclo:
                 ogroups.remove(vg)
             #
             # now for security reasons do a local copy of delete_verts
-            # with vertex number lower than the maxnumber of the human
+            # with vertex number lower than the maxnumber of the base
             #
             dellist = []
             for n in  self.delverts:
@@ -102,7 +102,7 @@ class import_mhclo:
             #
             vgrp = ogroups.new(name=self.delete_group)
             vgrp.add(dellist, 1, 'ADD')
-        self.clothes.location = human.location
+        self.clothes.location = base.location
         return
 
 
@@ -245,8 +245,8 @@ class import_mhclo:
             mhmaterial.assignAsNodesMaterialForObj(scn, obj, True)
         return
 
-    def setScalings (self, context, human):
-        (baseMeshType, meshConfig) = _loadMeshJson(human)
+    def setScalings (self, context, base):
+        (baseMeshType, meshConfig) = _loadMeshJson(base)
         #
         # I think it is okay to check only one dimension to figure out on
         # what the piece of cloth was created
@@ -278,34 +278,34 @@ class MHC_OT_ImportClothesOperator(bpy.types.Operator, ImportHelper):
         description="File path used for importing the mhclo file", 
         maxlen= 1024)
 
-    def getHuman(self, context):
-        humanObj = None
+    def getBase(self, context):
+        baseObj = None
         for obj in context.scene.objects:
             if hasattr(obj, "MhObjectType"):
                 if obj.MhObjectType == "Basemesh":
-                    humanObj = obj
+                    baseObj = obj
                     break
-        return humanObj
+        return baseObj
 
     @classmethod
     def poll(self, context):
         return True
 
     def invoke(self, context, event):
-        humanObj = self.getHuman(context)
-        if humanObj is not None:
-            self.filepath = getClothesRoot(humanObj.MhMeshType) + "/"
+        baseObj = self.getBase(context)
+        if baseObj is not None:
+            self.filepath = getClothesRoot(baseObj.MhMeshType) + "/"
         else:
             self.filepath = getClothesRoot(None) + "/"
         wm = context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
     
     def execute(self, context):
-        humanObj = self.getHuman(context)
+        baseObj = self.getBase(context)
 
         im = import_mhclo()
         im.load (context, self.properties)
-        if humanObj is not None:
-            im.update(humanObj)                 # update on human
-            im.setScalings(context, humanObj)   # and try to add offset scales
+        if baseObj is not None:
+            im.update(baseObj)                 # update on base
+            im.setScalings(context, baseObj)   # and try to add offset scales
         return {'FINISHED'}

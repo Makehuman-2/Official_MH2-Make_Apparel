@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import bpy
-from ..sanitychecks import checkSanityHuman
+from ..sanitychecks import checkSanityBase
 
-class MHC_OT_CheckHumanOperator(bpy.types.Operator):
-    """Check human object if it is usable for makeapparel"""
-    bl_idname = "makeapparel.check_human"
-    bl_label = "Check human"
+class MHC_OT_CheckBaseOperator(bpy.types.Operator):
+    """Check base object if it is usable for makeapparel"""
+    bl_idname = "makeapparel.check_base"
+    bl_label = "Check base"
     bl_options = {'REGISTER'}
 
     @classmethod
@@ -25,6 +25,6 @@ class MHC_OT_CheckHumanOperator(bpy.types.Operator):
         # (otherwise last changes are not used
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        (b, info, error) = checkSanityHuman(context)
-        bpy.ops.makeapparel.infobox('INVOKE_DEFAULT', title="Check Human", info=info, error=error)
+        (b, info, error) = checkSanityBase(context)
+        bpy.ops.makeapparel.infobox('INVOKE_DEFAULT', title="Check Base", info=info, error=error)
         return {'FINISHED'}

@@ -5,12 +5,12 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty
 from ..utils import loadObjFile
-from .markashuman import markAsHuman
+from .markasbase import markAsBase
 
-class MHC_OT_ImportHumanOperator(bpy.types.Operator, ImportHelper):
-    """Import a basemesh used for human, make sure mesh is not rotated and face is pointing to front view"""
-    bl_idname = "makeapparel.importhuman"
-    bl_label = "Import a mesh as human"
+class MHC_OT_ImportBaseOperator(bpy.types.Operator, ImportHelper):
+    """Import a basemesh, make sure mesh is not rotated and face is pointing to front view"""
+    bl_idname = "makeapparel.importbase"
+    bl_label = "Import a basemesh"
     bl_options = {'REGISTER', 'UNDO'}
     filename_ext = ".obj"
 
@@ -30,7 +30,7 @@ class MHC_OT_ImportHumanOperator(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         obj = loadObjFile(context, self.properties.filepath)
         if obj is not None:
-            text = markAsHuman(context)
+            text = markAsBase(context)
             if hasattr(bpy.context.scene, "MhScaleMode"):
                 bpy.context.scene.MhScaleMode = "DECIMETER"
             self.report({'INFO'}, text)

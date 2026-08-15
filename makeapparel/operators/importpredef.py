@@ -3,12 +3,12 @@
 
 import bpy
 import os
-from .markashuman import markAsHuman
+from .markasbase import markAsBase
 
 class MHC_OT_Predefined(bpy.types.Operator):
     """load predefined meshes from blend-file"""
     bl_idname = "makeapparel.importpredef"
-    bl_label = "Import predefined human"
+    bl_label = "Import predefined base"
     bl_options = {'REGISTER'}
     @classmethod
     def poll(cls, context):
@@ -23,7 +23,7 @@ class MHC_OT_Predefined(bpy.types.Operator):
         bpy.ops.wm.append(directory=filepath + '/Object/', link=False, autoselect=True, filename=obj)
 
         #
-        # get all objects and figure out the new mesh, set this to human and set scale
+        # get all objects and figure out the new mesh, set this to base and set scale
         # to decimeter
         #
         newObj = None
@@ -34,7 +34,7 @@ class MHC_OT_Predefined(bpy.types.Operator):
 
         if newObj is not None:
             context.view_layer.objects.active = newObj
-            text = markAsHuman(context)
+            text = markAsBase(context)
             if hasattr(bpy.context.scene, "MhScaleMode"):
                 bpy.context.scene.MhScaleMode = "DECIMETER"
             self.report({'INFO'}, text)

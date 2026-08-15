@@ -198,44 +198,44 @@ def checkNumberOfUVMaps(obj):
     else:
         return (False, cnt, "Active map is: " + uvlayers.active.name)
 
-# checkSanityHuman
-# do all tests on a human basemesh
+# checkSanityBase
+# do all tests on a basemesh
 
-def checkSanityHuman(context):
+def checkSanityBase(context):
     errortext = ""
     info  = ""
 
-    humanObj = None
+    baseObj = None
     cnt = 0
     for obj in context.scene.objects:
         if hasattr(obj, "MhObjectType"):
             if obj.MhObjectType == "Basemesh" or obj.MhObjectType == "_CustomBase_":
                 cnt += 1
-                if humanObj is None:
-                    humanObj = obj
+                if baseObj is None:
+                    baseObj = obj
 
     icon = "\001"
     if cnt == 0:
-        errortext += "Could not find any human object in this scene.\n"
+        errortext += "Could not find any base object in this scene.\n"
         icon = "\002"
     elif cnt > 1:
         icon = "\002"
-        errortext += "There are multiple human objects in this scene.\nTo avoid errors, only use one.\n"
-    info += icon + "Number of human objects is exactly 1 in the scene.\n"
+        errortext += "There are multiple base objects in this scene.\nTo avoid errors, only use one.\n"
+    info += icon + "Number of base objects is exactly 1 in the scene.\n"
 
-    if cnt == 0:    # we have to return, without a human at all no further checks possible
+    if cnt == 0:    # we have to return, without a base at all no further checks possible
         return (1, info, errortext)
 
     icon = "\001"   # now we try the test on the first object
-    if not checkHasAnyVGroups(humanObj):
-        errortext += "The human object does not have any vertex group.\nIt has to have at least one for MakeApparel to work.\n"
+    if not checkHasAnyVGroups(baseObj):
+        errortext += "The base object does not have any vertex group.\nIt has to have at least one for MakeApparel to work.\n"
         icon = "\002"
     info += icon + "At least one vertex group is available.\n"
 
     icon = "\001"
-    (b, hint) = checkVertexGroupAssignmentsAreNotCorrupt(humanObj)
+    (b, hint) = checkVertexGroupAssignmentsAreNotCorrupt(baseObj)
     if not b:
-        errortext += "The human object has vertices which belong non-existing\n" + hint
+        errortext += "The base object has vertices which belong non-existing\n" + hint
         icon = "\002"
     info += icon + "No vertex belongs to a non-existing group.\n"
     return (len(errortext) > 0, info, errortext)
@@ -250,7 +250,7 @@ def checkSanityHuman(context):
 # if markmesh is True marking the mesh (selecting the vertices)
 # will always be done only for the first occuring problem
 
-def checkSanityClothes(obj, humanobj=None, markmesh=True):
+def checkSanityClothes(obj, baseObj=None, markmesh=True):
     errortext = ""
     info  = ""
     max_def_poles = 8
@@ -305,14 +305,14 @@ def checkSanityClothes(obj, humanobj=None, markmesh=True):
         markmesh = False
     info += icon + "No vertex is assigned to a non existing group.\n"
 
-    if humanobj is not None:
+    if baseObj is not None:
         icon = "\001"
-        (b, hint) = checkAllVGroupsInFirstExistsInSecond(obj, humanobj)
+        (b, hint) = checkAllVGroupsInFirstExistsInSecond(obj, baseObj)
         if not b:
             errorcnt += 1
-            errortext += "This object has vertex groups which are missing on human,\nThese groups are:\n" + hint
+            errortext += "This object has vertex groups which are missing on base,\nThese groups are:\n" + hint
             icon = "\002"
-        info += icon + "All vertex groups exist on human.\n"
+        info += icon + "All vertex groups exist on base.\n"
 
     # for the last two only issue a warning
     #

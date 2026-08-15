@@ -5,7 +5,7 @@ import bpy
 import bmesh
 from ..core_functionality import _loadMeshJson
 
-_extractGroupDescription = "You can create a new mesh based on a vertex group in an imported human. Note that this is only possible if you imported with \"detailed helpers\". Without that, the only group possible to extract will be \"body\" and \"helpers\"."
+_extractGroupDescription = "You can create a new mesh based on a vertex group in an imported base. Note that this is only possible if you imported with \"detailed helpers\". Without that, the only group possible to extract will be \"body\" and \"helpers\"."
 
 def EvaluateGroupsCallback(self, context):
     _extractGroup = []
@@ -36,8 +36,8 @@ class MHC_OT_ExtractClothesOperator(bpy.types.Operator):
                     return True
         return False
 
-    def checkHasGroup(self, humanObj, groupName):
-        for group in humanObj.vertex_groups:
+    def checkHasGroup(self, baseObj, groupName):
+        for group in baseObj.vertex_groups:
             if group.name == groupName:
                 return True
         return False
@@ -52,10 +52,10 @@ class MHC_OT_ExtractClothesOperator(bpy.types.Operator):
 
     def execute(self, context):
 
-        humanObj = context.active_object
+        baseObj = context.active_object
         scn = context.scene
 
-        (meshtype, jlines) = _loadMeshJson(humanObj)
+        (meshtype, jlines) = _loadMeshJson(baseObj)
         what = self.extract
 
         if not what in jlines["select_groups"]:
@@ -69,14 +69,14 @@ class MHC_OT_ExtractClothesOperator(bpy.types.Operator):
             return {'FINISHED'}
 
         for groupName in groupNames:
-            if not self.checkHasGroup(humanObj, groupName):
+            if not self.checkHasGroup(baseObj, groupName):
                 self.report({'ERROR'}, "This mesh does not have the " + groupName + " vertex group. Maybe you didn't import with detailed helpers?")
                 return {'FINISHED'}
 
         # when a mesh was loaded by normal wavefront loader, the groups can be used also, but the mesh transformations must be
         # applied before
         #
-        context.view_layer.objects.active = humanObj
+        context.view_layer.objects.active = baseObj
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
         mesh = bpy.data.meshes.new("clothes")
@@ -89,13 +89,13 @@ class MHC_OT_ExtractClothesOperator(bpy.types.Operator):
         context.view_layer.objects.active = newObj
 
         bmOld = bmesh.new()
-        bmOld.from_mesh(humanObj.data)
+        bmOld.from_mesh(baseObj.data)
 
         bmNew = bmOld.copy()
 
         groupIndexes = dict()
 
-        for group in humanObj.vertex_groups:
+        for group in baseObj.vertex_groups:
             vg = newObj.vertex_groups.new(name=group.name)
             if group.name in groupNames:
                 groupIndexes[group.index] = group.name
@@ -105,7 +105,7 @@ class MHC_OT_ExtractClothesOperator(bpy.types.Operator):
         # delete vertices which do not belong to one of the groups of groupIndexes
         #
         vertsToDelete = []
-        for vert in humanObj.data.vertices:
+        for vert in baseObj.data.vertices:
             if len(vert.groups) > 0:
                 doDelete = True
                 for grp in vert.groups:
@@ -132,7 +132,7 @@ class MHC_OT_ExtractClothesOperator(bpy.types.Operator):
 
         bmOld.free()
 
-        newObj.location = humanObj.location
+        newObj.location = baseObj.location
 
         newObj.MhObjectType = "Clothes"
 
@@ -144,7 +144,7 @@ class MHC_OT_ExtractClothesOperator(bpy.types.Operator):
         #
         # Thus the only recourse is copying all vgroups and then delete the ones not relevant
 
-        for group in humanObj.vertex_groups:
+        for group in baseObj.vertex_groups:
             vg = newObj.vertex_groups.new(name=group.name)
 
         groupsToKeep = []

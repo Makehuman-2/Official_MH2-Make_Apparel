@@ -14,7 +14,7 @@ _licenses = [("CC0", "CC0", "Creative Commons Zero", 1),
 ]
 _licenseDescription = "Set an output license for the clothes. This will have no practical effect apart from being included in the written MHCLO file."
 
-_blendDescription = "Select human from blendfile"
+_blendDescription = "Select base from blendfile"
 _tagsDescription = "Select Tags for MakeHuman"
 _tagsDescriptionAdd = "Enter Tags for MakeHuman, separate by comma"
 
@@ -120,7 +120,7 @@ def extraProperties():
         setattr(bpy.types.Scene, 'MHTags_'+ group.lower(), EnumProperty(items=mh_tags[group], name=group.capitalize(),
                                                             description=_tagsDescription, default=mh_sel[group]))
 
-    bpy.types.Scene.MH_predefinedMeshes = bpy.props.EnumProperty(items=enumlist_meshes, name="Human", description=_blendDescription)
+    bpy.types.Scene.MH_predefinedMeshes = bpy.props.EnumProperty(items=enumlist_meshes, name="Base", description=_blendDescription)
     bpy.types.Scene.MHAdditionalTags = bpy.props.StringProperty(name="Additional tags", description=_tagsDescriptionAdd, default="")
     bpy.types.Scene.MHAltPath = bpy.props.StringProperty(name="Alternative data folder", description=_datafolder_description, default="")
     bpy.types.Scene.MHClothesDestination = bpy.props.EnumProperty(items=_destination, name="Clothes destination", description=_destination_description, default="clothes")
@@ -142,7 +142,7 @@ def extraProperties():
         bpy.types.Object.MhOffsetScale = StringProperty(name="OffSet Scale", description="Name of body part, where clothes are scaled to", default = "Torso")
     if not hasattr(bpy.types.Object, "MhDeleteGroup"):
         bpy.types.Object.MhDeleteGroup = StringProperty(name="Delete Group",
-                description="The group contains the vertices to be deleted on the human which are hidden by your piece of cloth", default="Delete")
+                description="The group contains the vertices to be deleted on the base which are hidden by your piece of cloth", default="Delete")
     if not hasattr(bpy.types.Object, "MhZDepth"):
         bpy.types.Object.MhZDepth = IntProperty(name="Z-Depth", description="", default=50)
     if not hasattr(bpy.types.Object, "MhMeshType"):

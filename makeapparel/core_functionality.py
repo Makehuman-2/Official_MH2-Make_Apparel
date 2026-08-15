@@ -46,16 +46,16 @@ class _VertexMatch():
     def __init__(self, clothesVertexIndex, clothesVertexX, clothesVertexY, clothesVertexZ):
         self.index = clothesVertexIndex
         self.exactMatch = None
-        self.closestHumanVertexIndices = [-1, -1, -1]
+        self.closestBaseVertexIndices = [-1, -1, -1]
         self.weights = [0.0, 0.0, 0.0]
         self.distance = [0.0, 0.0, 0.0]
         self.x = clothesVertexX
         self.y = clothesVertexY
         self.z = clothesVertexZ
-        self.closestHumanVertexCoordinates = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+        self.closestBaseVertexCoordinates = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
 
-    def markExact(self, humanVertexIndex):
-        self.exactMatch = humanVertexIndex
+    def markExact(self, baseVertexIndex):
+        self.exactMatch = baseVertexIndex
 
     def setWeights(self, w1, w2, w3):
         self.weights[0] = w1
@@ -64,9 +64,9 @@ class _VertexMatch():
 
     def __str__(self):
         if self.exactMatch is None:
-            v1 = self.closestHumanVertexIndices[0]
-            v2 = self.closestHumanVertexIndices[1]
-            v3 = self.closestHumanVertexIndices[2]
+            v1 = self.closestBaseVertexIndices[0]
+            v2 = self.closestBaseVertexIndices[1]
+            v3 = self.closestBaseVertexIndices[2]
 
             w1 = self.weights[0]
             w2 = self.weights[1]
@@ -83,15 +83,15 @@ class _VertexMatch():
 
 class _FaceMatch():
 
-    def __init__(self, humanObj, humanFaceIdx, clothesVertCoords):
-        self.faceIndex = humanFaceIdx
-        poly = humanObj.data.polygons[humanFaceIdx]
+    def __init__(self, baseObj, baseFaceIdx, clothesVertCoords):
+        self.faceIndex = baseFaceIdx
+        poly = baseObj.data.polygons[baseFaceIdx]
         self.score = 1
         mx = 0.0
         my = 0.0
         mz = 0.0
         for vertIdx in poly.vertices:
-            vert = humanObj.data.vertices[vertIdx]
+            vert = baseObj.data.vertices[vertIdx]
             mx = mx + vert.co[0]
             my = my + vert.co[1]
             mz = mz + vert.co[2]
@@ -118,17 +118,16 @@ class MakeApparel():
         self.exportName = name
         self.exportRoot = root
 
-        cleanedName = re.sub(r'\s+',"_",self.exportName)
-        self.cleanedName = re.sub(r'[./\\]+', "", cleanedName)
-        self.dirName = os.path.join(self.exportRoot,cleanedName)
+        self.cleanedName = re.sub(r'[^a-z0-9_+=-]', "_", self.exportName.lower())
+        self.dirName = os.path.join(self.exportRoot,self.cleanedName)
         self.namePrefix = os.path.join(self.dirName, self.cleanedName)
 
 
-    def params(self, clothesObj, humanObj, license="CC0", author="unknown", description="No description", overwriteMaterial=True):
+    def params(self, clothesObj, baseObj, license="CC0", author="unknown", description="No description", overwriteMaterial=True):
         self.clothesObj = clothesObj
-        self.humanObj = humanObj
+        self.baseObj = baseObj
         self.clothesmesh = MHMesh(clothesObj, context=self.context, allow_modifiers=self.context.scene.MHAllowMods)
-        self.humanmesh = MHMesh(humanObj)
+        self.basemesh = MHMesh(baseObj)
 
         # predefine size of the array needed 
         self.vertexMatches = [None] * len(self.clothesmesh.data.vertices)
@@ -160,7 +159,7 @@ class MakeApparel():
         if len(self.bodyPart) == 0:
             return (False, "No scaling defined")
 
-        (self.baseMeshType, self.meshConfig) = _loadMeshJson(self.humanObj)    # load parameters for scales according to mesh
+        (self.baseMeshType, self.meshConfig) = _loadMeshJson(self.baseObj)    # load parameters for scales according to mesh
         if len(self.meshConfig) == 0:
             return (False, "Cannot open configuration file for " + self.baseMeshType)
 
@@ -193,9 +192,9 @@ class MakeApparel():
             'ymin': dims['ymin'], 'ymax': dims['ymax'],
             'zmin': dims['zmin'], 'zmax': dims['zmax']
         }
-        self.scales[0] = self.humanmesh.getScale (dims['xmin'], dims['xmax'], 0)
-        self.scales[2] = self.humanmesh.getScale (dims['ymin'], dims['ymax'], 1) # scales-index
-        self.scales[1] = self.humanmesh.getScale (dims['zmin'], dims['zmax'], 2) # y and z are changed
+        self.scales[0] = self.basemesh.getScale (dims['xmin'], dims['xmax'], 0)
+        self.scales[2] = self.basemesh.getScale (dims['ymin'], dims['ymax'], 1) # scales-index
+        self.scales[1] = self.basemesh.getScale (dims['zmin'], dims['zmax'], 2) # y and z are changed
 
         #
         # write the output files and check for errors
@@ -214,7 +213,7 @@ class MakeApparel():
         else:
             print ("Material is not overwritten")
 
-        self.selectHumanVertices()
+        self.selectBaseVertices()
         return (True, "")
 
     def findClosestVertices(self):
@@ -231,9 +230,9 @@ class MakeApparel():
             # determine kd tree, also delivers number of vertices per group
             # 3 means triangle group, then an array is given
             #
-            (size, kdtree) = self.humanmesh.vertexGroupKDTree(vgroupName) 
+            (size, kdtree) = self.basemesh.vertexGroupKDTree(vgroupName) 
             if size < 3:    # group with less than 3 vertices does not work
-                return (False, "Cannot create search tree for group " + vgroupName + " on human. Number of vertices must be at least 3.")
+                return (False, "Cannot create search tree for group " + vgroupName + " on base. Number of vertices must be at least 3.")
 
             #
             # special code for rigid group
@@ -255,9 +254,9 @@ class MakeApparel():
                     hCoord = []
                     j = 0
                     for vert in kdtree:     # an array in this case
-                        vertexMatch.closestHumanVertexIndices[j] = vert.index
-                        vertexMatch.closestHumanVertexCoordinates[j] = vert.co
-                        hCoord.append(self.humanmesh.allVertexCoordinates[vert.index])
+                        vertexMatch.closestBaseVertexIndices[j] = vert.index
+                        vertexMatch.closestBaseVertexCoordinates[j] = vert.co
+                        hCoord.append(self.basemesh.allVertexCoordinates[vert.index])
                         j += 1
                     self.vertexMatches[vertex[0]] = vertexMatch             # put element to predefined location
                 continue
@@ -273,12 +272,12 @@ class MakeApparel():
                         vertexMatch.markExact(index)
                         exact = True
                     elif exact is False:
-                        vertexMatch.closestHumanVertexIndices[j] = index
-                        vertexMatch.closestHumanVertexCoordinates[j] = co
-                        hCoord.append(self.humanmesh.allVertexCoordinates[index])
+                        vertexMatch.closestBaseVertexIndices[j] = index
+                        vertexMatch.closestBaseVertexCoordinates[j] = co
+                        hCoord.append(self.basemesh.allVertexCoordinates[index])
                         j += 1
                 if exact is False:
-                    vertexMatch.closestHumanVertexCoordinates = hCoord
+                    vertexMatch.closestBaseVertexCoordinates = hCoord
                 self.vertexMatches[vertex[0]] = vertexMatch
         return (True, "")
 
@@ -296,8 +295,8 @@ class MakeApparel():
             # polygon later in case of quad
             #
             forms_polygon = 0
-            for polygon in self.humanmesh.vertPolygons[vm.closestHumanVertexIndices[0]]:
-                if vm.closestHumanVertexIndices[1] in polygon.vertices and vm.closestHumanVertexIndices[2] in polygon.vertices:
+            for polygon in self.basemesh.vertPolygons[vm.closestBaseVertexIndices[0]]:
+                if vm.closestBaseVertexIndices[1] in polygon.vertices and vm.closestBaseVertexIndices[2] in polygon.vertices:
                     forms_polygon = 1
                     break
             if forms_polygon:
@@ -309,8 +308,8 @@ class MakeApparel():
             faceMatches = []
             maxScore = 1
             for i in [0, 1, 2]:
-                vertIdx = vm.closestHumanVertexIndices[i]
-                for polygon in self.humanmesh.vertPolygons[vertIdx]:
+                vertIdx = vm.closestBaseVertexIndices[i]
+                for polygon in self.basemesh.vertPolygons[vertIdx]:
                     faceIdx = polygon.index
                     alreadyAdded = False
                     for fm in faceMatches:
@@ -321,7 +320,7 @@ class MakeApparel():
                                 maxScore = fm.score
                             break
                     if not alreadyAdded:
-                        fm = _FaceMatch(self.humanObj, faceIdx, [vm.x, vm.y, vm.z])
+                        fm = _FaceMatch(self.baseObj, faceIdx, [vm.x, vm.y, vm.z])
                         faceMatches.append(fm)
 
             # now figure out the best faces, all in case of maxScore = 1 otherwise those with maxscore
@@ -351,22 +350,22 @@ class MakeApparel():
             # closest to the clothes vert. But for the sake of efficiency we
             # will instead pick the first three verts listed in the face
 
-            bestVerts = self.humanObj.data.polygons[bestFace.faceIndex].vertices
+            bestVerts = self.baseObj.data.polygons[bestFace.faceIndex].vertices
             vIdxs = [0,0,0]
             vCos = [[0,0,0], [0,0,0], [0,0,0]]
 
             for i in [0, 1, 2]:
                 idx = bestVerts[i]
                 vIdxs[i] = idx
-                co = self.humanObj.data.vertices[idx].co
+                co = self.baseObj.data.vertices[idx].co
                 vCos[i] = [co[0], co[1], co[2]]
 
-            vm.closestHumanVertexIndices = vIdxs
-            vm.closestHumanVertexCoordinates = vCos
+            vm.closestBaseVertexIndices = vIdxs
+            vm.closestBaseVertexCoordinates = vCos
 
     def findExactNeighbors(self):
         symverts = [None, None]
-        hmesh = self.humanObj.data
+        hmesh = self.baseObj.data
 
         for vm in self.vertexMatches:
             #
@@ -392,7 +391,7 @@ class MakeApparel():
             #
             if exact == 2:
                 # find the polygon with this edge
-                for polygon in self.humanmesh.vertPolygons[symverts[0]]:
+                for polygon in self.basemesh.vertPolygons[symverts[0]]:
                     if symverts[1] in polygon.vertices:
                         #
                         # okay this is the polygon, we need a third vertex
@@ -401,23 +400,21 @@ class MakeApparel():
                             if v not in symverts:
                                 #
                                 # v is the last one ... we are complete
-                                vm.closestHumanVertexIndices = (symverts[0], symverts[1], v)
-                                vm.closestHumanVertexCoordinates = (hmesh.vertices[symverts[0]].co, hmesh.vertices[symverts[1]].co, hmesh.vertices[v].co)
+                                vm.closestBaseVertexIndices = (symverts[0], symverts[1], v)
+                                vm.closestBaseVertexCoordinates = (hmesh.vertices[symverts[0]].co, hmesh.vertices[symverts[1]].co, hmesh.vertices[v].co)
                                 break
                         break
 
     def findWeightsAndDistances(self):
         for vertexMatch in self.vertexMatches:
             if vertexMatch.exactMatch is None:
-                # TODO: could be that further improvement like Thomas' mid vertex should be done
-
                 # To make the algorithm understandable I change our 3 vertices to triangle ABC and use Blender
                 # Vectors to be able to use internal functions like cross, dot, normal whatever you need
                 # For all vectors I use only capital letters, reading is simplified imho
 
-                A = Vector(self.humanmesh.allVertexCoordinates[vertexMatch.closestHumanVertexIndices[0]])
-                B = Vector(self.humanmesh.allVertexCoordinates[vertexMatch.closestHumanVertexIndices[1]])
-                C = Vector(self.humanmesh.allVertexCoordinates[vertexMatch.closestHumanVertexIndices[2]])
+                A = Vector(self.basemesh.allVertexCoordinates[vertexMatch.closestBaseVertexIndices[0]])
+                B = Vector(self.basemesh.allVertexCoordinates[vertexMatch.closestBaseVertexIndices[1]])
+                C = Vector(self.basemesh.allVertexCoordinates[vertexMatch.closestBaseVertexIndices[2]])
 
                 # The vertex on the clothes is the Vector Q
                 Q = Vector(( vertexMatch.x, vertexMatch.y, vertexMatch.z))
@@ -482,14 +479,14 @@ class MakeApparel():
         if not os.path.exists(self.dirName):
             os.makedirs(self.dirName)
 
-    def selectHumanVertices(self):
+    def selectBaseVertices(self):
         for vm in self.vertexMatches:
             if vm.exactMatch is None:
                 for i in [0, 1, 2]:
-                    idx = vm.closestHumanVertexIndices[i]
-                    self.humanObj.data.vertices[idx].select = True
+                    idx = vm.closestBaseVertexIndices[i]
+                    self.baseObj.data.vertices[idx].select = True
 
-    # for DeleteVertices test if the assigned delete-group is found on the human
+    # for DeleteVertices test if the assigned delete-group is found on the base
     # and collect vertices belonging to this group
 
     def evaluateDeleteVertices(self):
@@ -498,15 +495,15 @@ class MakeApparel():
         cnt = 0
         column = 0
         if deletegroup != "":
-            vgrp = self.humanObj.vertex_groups
+            vgrp = self.baseObj.vertex_groups
 
-            # get group index and check on human
+            # get group index and check on base
             #
             if vgrp is not None and deletegroup in vgrp:
 
                 gindex = vgrp[deletegroup].index
 
-                for v in self.humanObj.data.vertices:
+                for v in self.baseObj.data.vertices:
                     for g in v.groups:
 
                         # if the index of the group fits to the current group

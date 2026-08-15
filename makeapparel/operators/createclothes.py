@@ -3,7 +3,7 @@
 
 import bpy
 import os
-from ..sanitychecks import checkSanityHuman, checkSanityClothes
+from ..sanitychecks import checkSanityBase, checkSanityClothes
 from ..core_functionality import MakeApparel
 from ..utils import getClothesRoot
 
@@ -25,18 +25,18 @@ class MHC_OT_CreateClothesOperator(bpy.types.Operator):
 
     def execute(self, context):
 
-        (b, info, error) = checkSanityHuman(context)
+        (b, info, error) = checkSanityBase(context)
         if b:
-            bpy.ops.makeapparel.infobox('INVOKE_DEFAULT', title="Check Human", info=info, error=error)
+            bpy.ops.makeapparel.infobox('INVOKE_DEFAULT', title="Check Base", info=info, error=error)
             return {'FINISHED'}
 
-        # since we tested the existence of a human above there is exactly one
+        # since we tested the existence of a base above there is exactly one
         #
-        humanObj = None
+        baseObj = None
         for obj in context.scene.objects:
             if hasattr(obj, "MhObjectType"):
                 if obj.MhObjectType == "Basemesh":
-                    humanObj = obj
+                    baseObj = obj
                     break
 
         clothesObj = context.active_object
@@ -53,10 +53,10 @@ class MHC_OT_CreateClothesOperator(bpy.types.Operator):
         #
         bpy.ops.object.select_all(action='DESELECT')
 
-        if(humanObj.select_get() is False):
-            humanObj.select_set(True)
+        if(baseObj.select_get() is False):
+            baseObj.select_set(True)
 
-        context.view_layer.objects.active = humanObj
+        context.view_layer.objects.active = baseObj
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
@@ -68,7 +68,7 @@ class MHC_OT_CreateClothesOperator(bpy.types.Operator):
         if context.scene.MHAltPath != "":
             rootDir = context.scene.MHAltPath
         else:
-            rootDir = getClothesRoot(humanObj.MhMeshType, subdir)
+            rootDir = getClothesRoot(baseObj.MhMeshType, subdir)
         name = clothesObj.MhClothesName
         mc = MakeApparel(context, name, rootDir)
 
@@ -82,7 +82,7 @@ class MHC_OT_CreateClothesOperator(bpy.types.Operator):
         #
         # do the checks before shape key is destroyed
         #
-        (b, info, error) = checkSanityClothes(clothesObj, humanObj)
+        (b, info, error) = checkSanityClothes(clothesObj, baseObj)
         if b:
             bpy.ops.makeapparel.infobox('INVOKE_DEFAULT', title="Check Clothes", info=info, error=error)
             self.report({'ERROR'}, "no clothes created.")
@@ -91,14 +91,14 @@ class MHC_OT_CreateClothesOperator(bpy.types.Operator):
         # all checks done
 
         #
-        # in case that the human has shape keys,
+        # in case that the base has shape keys,
         # add a new one as a mix of all and then remove these one by one
         # so that the last one with its value will be accepted
         #
-        if  humanObj.data.shape_keys is not None:
-            humanObj.shape_key_add(name=str(humanObj.active_shape_key.name)+"_applied", from_mix=True)
-            n = len (humanObj.data.shape_keys.key_blocks)
-            humanObj.active_shape_key_index = 0
+        if  baseObj.data.shape_keys is not None:
+            baseObj.shape_key_add(name=str(baseObj.active_shape_key.name)+"_applied", from_mix=True)
+            n = len (baseObj.data.shape_keys.key_blocks)
+            baseObj.active_shape_key_index = 0
             for i in range(0, n):
                 bpy.ops.object.shape_key_remove(all=False)
 
@@ -114,7 +114,7 @@ class MHC_OT_CreateClothesOperator(bpy.types.Operator):
         license = context.scene.MhClothesLicense
         author =  context.scene.MhClothesAuthor
 
-        mc.params(clothesObj, humanObj, license=license, author=author, description=desc, overwriteMaterial=context.scene.MHOverwriteMat)
+        mc.params(clothesObj, baseObj, license=license, author=author, description=desc, overwriteMaterial=context.scene.MHOverwriteMat)
         (b, hint) = mc.make()
         if b is False:
             self.report({'ERROR'}, hint)

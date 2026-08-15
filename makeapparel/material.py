@@ -665,14 +665,14 @@ class MHC_OT_WriteMaterialOperator(bpy.types.Operator, ExportHelper):
             subtype='FILE_PATH',
             )
 
-    def getHuman(self, context):
-        humanObj = None
+    def getBase(self, context):
+        baseObj = None
         for obj in context.scene.objects:
             if hasattr(obj, "MhObjectType"):
                 if obj.MhObjectType == "Basemesh":
-                    humanObj = obj
+                    baseObj = obj
                     break
-        return humanObj
+        return baseObj
 
     @classmethod
     def poll(self, context):
@@ -692,15 +692,15 @@ class MHC_OT_WriteMaterialOperator(bpy.types.Operator, ExportHelper):
                 blend_filepath = "untitled"
             self.filepath = blend_filepath + self.filename_ext
 
-        humanObj = self.getHuman(context)
+        baseObj = self.getBase(context)
         subdir = context.scene.MHClothesDestination
         if context.scene.MHAltPath != "":
             rootDir = context.scene.MHAltPath
         else:
-            if humanObj is None:
+            if baseObj is None:
                 meshtype = "hm08"
             else:
-                meshtype = humanObj.MhMeshType
+                meshtype = baseObj.MhMeshType
             rootDir = getClothesRoot(meshtype, subdir)
 
         self.filepath = os.path.join(rootDir, self.filepath)
