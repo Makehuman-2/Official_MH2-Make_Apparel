@@ -15,7 +15,7 @@ from .apply_shapekeys import MHC_OT_ApplyShapeKeysOperator
 from .deletehelper import MHC_OT_DeleteHelper
 from .tagselector import MHC_OT_TagSelector
 from .importpredef import MHC_OT_Predefined
-from .offsetscaling import MHC_OT_GetOffsetScaling
+from .offsetscaling import MHC_OT_GetOffsetScaling, MHC_OT_GetRigid
 
 OPERATOR_CLASSES = [
     MHC_OT_ExtractClothesOperator,
@@ -30,7 +30,8 @@ OPERATOR_CLASSES = [
     MHC_OT_DeleteHelper,
     MHC_OT_TagSelector,
     MHC_OT_Predefined,
-    MHC_OT_GetOffsetScaling
+    MHC_OT_GetOffsetScaling,
+    MHC_OT_GetRigid
 ]
 
 __all__ = [
@@ -47,5 +48,6 @@ __all__ = [
     "MHC_OT_TagSelector",
     "MHC_OT_Predefined",
     "MHC_OT_GetOffsetScaling",
+    "MHC_OT_GetRigid",
     "OPERATOR_CLASSES"
 ]

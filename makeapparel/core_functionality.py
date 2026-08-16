@@ -163,7 +163,7 @@ class MakeApparel():
         if len(self.meshConfig) == 0:
             return (False, "Cannot open configuration file for " + self.baseMeshType)
 
-        if self.bodyPart not in  self.meshConfig["dimensions"]:                 # check if we have the scalings
+        if self.bodyPart != "identity" and self.bodyPart not in  self.meshConfig["dimensions"]:                 # check if we have the scalings
             return (False, "Cannot evaluate offsets for " + self.bodyPart)
 
         # also the groups have been tested we should avoid going on with an unknown group
@@ -186,15 +186,18 @@ class MakeApparel():
         # 
         # get dimensions of the selected BodyPart (values from json are blender values)
         #
-        dims = self.meshConfig["dimensions"][self.bodyPart]
-        self.minmax = {
-            'xmin': dims['xmin'], 'xmax': dims['xmax'],
-            'ymin': dims['ymin'], 'ymax': dims['ymax'],
-            'zmin': dims['zmin'], 'zmax': dims['zmax']
-        }
-        self.scales[0] = self.basemesh.getScale (dims['xmin'], dims['xmax'], 0)
-        self.scales[2] = self.basemesh.getScale (dims['ymin'], dims['ymax'], 1) # scales-index
-        self.scales[1] = self.basemesh.getScale (dims['zmin'], dims['zmax'], 2) # y and z are changed
+        if self.bodyPart != "identity":
+            dims = self.meshConfig["dimensions"][self.bodyPart]
+            self.minmax = {
+                'xmin': dims['xmin'], 'xmax': dims['xmax'],
+                'ymin': dims['ymin'], 'ymax': dims['ymax'],
+                'zmin': dims['zmin'], 'zmax': dims['zmax']
+            }
+            self.scales[0] = self.basemesh.getScale (dims['xmin'], dims['xmax'], 0)
+            self.scales[2] = self.basemesh.getScale (dims['ymin'], dims['ymax'], 1) # scales-index
+            self.scales[1] = self.basemesh.getScale (dims['zmin'], dims['zmax'], 2) # y and z are changed
+        else:
+            self.scales = [1.0, 1.0, 1.0]           # x_scale, y_scale, z_scale
 
         #
         # write the output files and check for errors
@@ -552,9 +555,10 @@ class MakeApparel():
                 f.write("obj_file " + self.cleanedName + ".obj\n")
                 f.write("material " + self.cleanedName + ".mhmat" + "\n\n")
                 f.write("uuid " + str(uuid.uuid4()) + "\n")
-                f.write("x_scale " + str(self.minmax['xmin']) + " " + str(self.minmax['xmax']) + " " + str(round(self.scales[0], 4)) + "\n")
-                f.write("y_scale " + str(self.minmax['zmin']) + " " + str(self.minmax['zmax']) + " " + str(round(self.scales[1], 4)) + "\n")
-                f.write("z_scale " + str(self.minmax['ymin']) + " " + str(self.minmax['ymax']) + " " + str(round(self.scales[2], 4)) + "\n")
+                if hasattr(self, "minmax"):
+                    f.write("x_scale " + str(self.minmax['xmin']) + " " + str(self.minmax['xmax']) + " " + str(round(self.scales[0], 4)) + "\n")
+                    f.write("y_scale " + str(self.minmax['zmin']) + " " + str(self.minmax['zmax']) + " " + str(round(self.scales[1], 4)) + "\n")
+                    f.write("z_scale " + str(self.minmax['ymin']) + " " + str(self.minmax['ymax']) + " " + str(round(self.scales[2], 4)) + "\n")
                 f.write("max_pole " + str(self.clothesmesh.max_poles) + "\n")
                 f.write("z_depth " + str(self.clothesObj.MhZDepth) + "\n\n")
                 f.write("# Vertex info:\n")

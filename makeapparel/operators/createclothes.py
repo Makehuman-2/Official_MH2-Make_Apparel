@@ -4,7 +4,7 @@
 import bpy
 import os
 from ..sanitychecks import checkSanityBase, checkSanityClothes
-from ..core_functionality import MakeApparel
+from ..core_functionality import MakeApparel, _loadMeshJson
 from ..utils import getClothesRoot
 
 class MHC_OT_CreateClothesOperator(bpy.types.Operator):
@@ -59,6 +59,25 @@ class MHC_OT_CreateClothesOperator(bpy.types.Operator):
         context.view_layer.objects.active = baseObj
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+        # check if we have to create vertex groups on clothes
+        # if it is rigid delete all vertex groups and assign the one mentioned
+        if clothesObj.MhRigid != "not rigid":
+            (self.baseMeshType, meshConfig) = _loadMeshJson(baseObj)    # load parameters for scales according to mesh
+            if len(meshConfig) == 0:
+                self.report({'ERROR'}, "JSON error, no clothes created.")
+                return {'FINISHED'}
+
+
+            for g in clothesObj.vertex_groups:
+                clothesObj.vertex_groups.remove(g)
+
+            newgroup = meshConfig["rigid"][clothesObj.MhRigid]
+            vg = clothesObj.vertex_groups.new(name=newgroup)
+
+            vertex_indices = [v.index for v in clothesObj.data.vertices]
+            vg.add(vertex_indices, 1.0, 'ADD')
+
 
         #
         # create filename and check if already existent
