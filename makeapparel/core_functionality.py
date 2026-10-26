@@ -18,19 +18,19 @@ def _loadMeshJson(obj):
         meshtype = obj.MhMeshType
 
     if meshtype in _knownMeshes:        # check if we already have the mesh
-        return (meshtype, _knownMeshes[meshtype])
+        return meshtype, _knownMeshes[meshtype]
 
     meshfilename =  meshtype + ".config"
     meshfile = os.path.join(os.path.dirname(__file__), "data", meshfilename)
     try:
         cfile = open (meshfile, "r")
     except IOError:
-        return (meshtype, "")
+        return meshtype, ""
     else:
         jlines = json.load(cfile)
         cfile.close()
         _knownMeshes[meshtype] = jlines     # we got a new mesh
-        return (meshtype, jlines)
+        return meshtype, jlines
 
 def _distance(co1, co2):
     xd = co1[0] - co2[0]
@@ -157,20 +157,20 @@ class MakeApparel():
 
         self.bodyPart = self.clothesObj.MhOffsetScale       # get the scalings
         if len(self.bodyPart) == 0:
-            return (False, "No scaling defined")
+            return False, "No scaling defined"
 
         (self.baseMeshType, self.meshConfig) = _loadMeshJson(self.baseObj)    # load parameters for scales according to mesh
         if len(self.meshConfig) == 0:
-            return (False, "Cannot open configuration file for " + self.baseMeshType)
+            return False, "Cannot open configuration file for " + self.baseMeshType
 
         if self.bodyPart != "identity" and self.bodyPart not in  self.meshConfig["dimensions"]:                 # check if we have the scalings
-            return (False, "Cannot evaluate offsets for " + self.bodyPart)
+            return False, "Cannot evaluate offsets for " + self.bodyPart
 
         # also the groups have been tested we should avoid going on with an unknown group
         #
-        (b, text) = self.findClosestVertices()
+        b, text = self.findClosestVertices()
         if b is False:
-            return (False, text)
+            return False, text
 
         # in case of a mesh with only three vertices to follow, no additional work
         #
@@ -202,22 +202,29 @@ class MakeApparel():
         #
         # write the output files and check for errors
         #
-        (b, hint) = self.writeMhClo()
-        if b is False:
-            return (False, hint)
         (b, hint) = self.writeObj()
         if b is False:
-            return (False, hint)
+            return False, hint
+
+        # now delete possible mhbin
+        #
+        deletefile = os.path.join(self.dirName,self.cleanedName + ".mhbin")
+        if os.path.exists(deletefile):
+            os.remove(deletefile)
+
+        (b, hint) = self.writeMhClo()
+        if b is False:
+            return False, hint
 
         if self.overwriteMaterial or not self.mhmatExists():
             (b, hint) = self.writeMhMat()
             if b is False:
-                return (False, hint)
+                return False, hint
         else:
             print ("Material is not overwritten")
 
         self.selectBaseVertices()
-        return (True, "")
+        return True, ""
 
     def findClosestVertices(self):
         for vgroupIdx in self.clothesmesh.vertexGroupNames.keys():
@@ -235,7 +242,7 @@ class MakeApparel():
             #
             (size, kdtree) = self.basemesh.vertexGroupKDTree(vgroupName) 
             if size < 3:    # group with less than 3 vertices does not work
-                return (False, "Cannot create search tree for group " + vgroupName + " on base. Number of vertices must be at least 3.")
+                return False, "Cannot create search tree for group " + vgroupName + " on base. Number of vertices must be at least 3."
 
             #
             # special code for rigid group
@@ -246,7 +253,7 @@ class MakeApparel():
                 #
                 area = mathutils.geometry.area_tri(kdtree[0].co, kdtree[1].co, kdtree[2].co)
                 if area < 0.0001:
-                    return (False, "Group " + vgroupName + ": The vertices create a triangle smaller than 0.0001, this will result in bad geometry")
+                    return False, "Group " + vgroupName + ": The vertices create a triangle smaller than 0.0001, this will result in bad geometry"
 
                 # mark it a triangle to avoid further calculations
                 #
@@ -282,7 +289,7 @@ class MakeApparel():
                 if exact is False:
                     vertexMatch.closestBaseVertexCoordinates = hCoord
                 self.vertexMatches[vertex[0]] = vertexMatch
-        return (True, "")
+        return True, ""
 
     def findBestFaces(self):
         # In this method we will go through the vertexmatches and if needed switch which vertices are selected so that all
@@ -570,9 +577,9 @@ class MakeApparel():
                 if self.deleteVerticesOutput != "":
                     f.write ("\ndelete_verts\n" + self.deleteVerticesOutput + "\n")
                 f.close()
-                return (True, "")
+                return True, ""
         except EnvironmentError as e:
-            return (False, "Cannot write " + outputFile + "\n" + str(e))
+            return False, "Cannot write " + outputFile + "\n" + str(e)
 
     def writeObj(self):
         # Yes, I'm aware there is a wavefront exporter in the blender API already. However, we need to make
@@ -621,9 +628,9 @@ class MakeApparel():
                             f.write(" %d" % (i + 1))
                         f.write("\n")
                 f.close()
-                return (True, "")
+                return True, ""
         except EnvironmentError as e:
-            return (False, "Cannot write " + outputFile + "\n" + str(e))
+            return False, "Cannot write " + outputFile + "\n" + str(e)
 
     def writeMhMat(self):
         mhmat = MHMat()
@@ -631,6 +638,6 @@ class MakeApparel():
         outputFile = os.path.join(self.dirName,self.cleanedName + ".mhmat")
         errtext = mhmat.writeMHmat(self.context.scene, self.clothesObj, outputFile)
         if errtext:
-            return (False, "Cannot write " + outputFile + "\n" + str(errtext))
+            return False, "Cannot write " + outputFile + "\n" + str(errtext)
         else:
-            return (True, "")
+            return True, ""
