@@ -9,7 +9,7 @@
 bl_info = {
     "name": "MakeApparel",
     "author": "black-punkduck, Elvaerwyn",
-    "version": (3,0,1),
+    "version": (3,0,2),
     "blender": (4,0,0),
     "location": "View3D > Properties > MakeApparel",
     "description": "Create MakeHuman2 Fashion and Assets",
